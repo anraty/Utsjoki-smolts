@@ -51,10 +51,95 @@ d <- d_r %>%
   ) 
 
 
+
+#   wrnglin wttr data
+
+wtr_r <- read_excel("datanpaikkaus/wttr_17.xlsx",
+                    sheet = "Havainnot")
+
+
+#   all wetaher
+wtr_all <- wtr_r %>%  
+  select_all() %>% 
+  transmute(
+    date = as_date(paste(Vuosi, Kk, Pv)),
+    klo = format(Klo, format = "%H:%M"),
+    press = `Ilmanpaine (msl) (hPa)`,
+    rain = `Sademäärä (mm)`,
+    humi = `Suhteellinen kosteus (%)`,
+    temp_air = `Ilman lämpötila (degC)`,
+    wind = `Tuulen nopeus (m/s)`,
+    id = as.POSIXct(paste(date,klo), format = "%Y-%m-%d%H")
+  )  
+
+#   hourly weather
+wttr_hourly <- wtr_all %>% 
+  group_by(id) %>% 
+  summarise(
+    press = mean(press, na.rm =T),
+    rain = sum(rain, na.rm =T),
+    humi = mean(humi, na.rm =T),
+    temp_air = mean(temp_air, na.rm =T),
+    wind = mean(wind, na.rm =T)
+  )
+
+
+#   daily weather
+wttr_daily <- wtr_all %>% 
+  group_by(date) %>% 
+  summarise(
+    press = mean(press, na.rm =T),
+    rain = sum(rain, na.rm =T),
+    humi = mean(humi, na.rm =T),
+    temp_air = mean(temp_air, na.rm =T),
+    wind = mean(wind, na.rm =T)
+  )
+
+#   getting amount of days from last rain
+
+rainbf <- c()
+for(i in 1:length(wttr_daily$rain)){
+  
+  if(wttr_daily$rain[i] > 0){
+    rainbf[i] <- 0
+    print("sataa")
+  }
+  
+  else{
+    print("ei sada")
+    count = 0
+    bf = 1
+    if(i-bf == 1){
+      print("alussa")
+      count = bf
+    }
+    else{
+      while (wttr_daily$rain[i-bf]==0) {
+        print("ei sada vieläkään")
+        bf = bf+1
+      }
+      print("satoi")
+      count = bf
+    }
+    rainbf[i] = count
+  }
+}
+
+
+wttr_daily %<>%
+  select_all() %>% 
+  mutate(
+    rainbf = rainbf
+  )
+
+
 data17 <- left_join(smolt_daily, temp_daily, by ="date") %>% 
-  left_join(., d, by ="date") 
+  left_join(., d, by ="date") %>%  
+  left_join(., wttr_daily, by = "date")
 
   
+
+
 
 
 
