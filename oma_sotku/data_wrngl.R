@@ -18,12 +18,16 @@ sm <- sm_r %>%
 #   smolts by hour
 smolt_hourly <- sm %>% 
   group_by(id) %>% 
-  summarise(smolt = sum(smolt, na.rm =T))
+  summarise(schools = sum(!is.na(smolt)),
+            smolt = sum(smolt, na.rm =T)) %>% 
+  select(id, smolt, schools)
 
 #   smolts by day
 smolt_daily <- sm %>% 
   group_by(date) %>% 
-  summarise(smolt = sum(smolt, na.rm =T))
+  summarise(schools = sum(!is.na(smolt)),
+            smolt = sum(smolt, na.rm =T)) %>% 
+  select(date, smolt, schools)
 
 
 t_r <- read_excel("01.5-Data_raw/Utsjoki_veden lämpö_2016-2017.xlsx", skip = 1)
@@ -133,12 +137,25 @@ wttr_daily %<>%
   )
 
 
-data17 <- left_join(smolt_daily, temp_daily, by ="date") %>% 
+data17_all <- left_join(smolt_daily, temp_daily, by ="date") %>% 
   left_join(., d, by ="date") %>%  
   left_join(., wttr_daily, by = "date")
 
   
 
+
+data17 <- data17_all %>% 
+  select_all() %>% 
+  mutate(
+    Year = format(date, format("%Y")),
+    Month = format(date, format("%m")),
+    Day = format(date, format("%d")),
+    flow = disc,
+    smolts = smolt,
+    meanTemp = temp
+  ) %>% 
+  select(Year, Month, Day, smolts, schools, flow, meanTemp)
+   
 
 
 

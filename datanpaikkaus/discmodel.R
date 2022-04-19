@@ -1,4 +1,4 @@
-library(nimble);library(runjags)
+library(nimble);library(runjags);library(rjags)
 #   model for predictiong discharge
 
 #   virtaamaan vaikuttaa
@@ -20,12 +20,14 @@ d <- list(
 
 data <- list(
   
-  n = length(data17$date),
-  disc = data17$disc,
-  rainbf = data17$rainbf,
-  rain = data17$rain,
-  humi = data17$humi,
-  wind = data17$wind
+  n = length(data17_all$date),
+  disc = data17_all$disc,
+  rainbf = data17_all$rainbf,
+  rain = data17_all$rain,
+  humi = data17_all$humi,
+  wind = data17_all$wind,
+  temp = data17_all$temp,
+  temp_air = data17_all$temp_air
   
 )
 
@@ -76,32 +78,37 @@ dmod <- "model{
     disc[i] ~ dnorm(disc_mu[i], sd_disc^-2)T(0,)
     
     disc_mu[i] <- mu_lin[i] + rand[i]
+    #disc_mu[i] <- mu_lin[i]
     rand[i] ~ ddexp(lam_rand[i], sd_rand^-2)
+    #rand[i] ~ dnorm(lam_rand[i], sd_rand^-2)
     #   using exp to ge zerocentric like it shold be in random eff model
     
     #linear part
-    mu_lin[i] <- b[1] + b[2]*rain[i] + b[3]*humi[i] + b[4]*wind[i] 
+    #mu_lin[i] <- b[1] + b[2]*rain[i] + b[3]*humi[i] + b[4]*wind[i] 
+    #mu_lin[i] <- b[1] + b[2]*rain[i] + b[3]*rainbf[i] + b[4]*press[i]
+    mu_lin[i] <- b[1]*temp[i]+b[2]*temp_air[i]+b[3]*wind[i]+b[4]*rainbf[i]
     #randomeff part
     #lam_rand[i] <- a*rainbf[i]
 
     }
     
     for(i in 2:n){
-      lam_rand[i] = a[1]*disc[i-1] + a[2]*rainbf[i] 
-    #lam_rand[i] <- a*disc[i-1]
+      #lam_rand[i] = a[1]*disc[i-1] + a[2]*rainbf[i] 
+      lam_rand[i] <- a*disc[i-1]
     
     }
   
   #   priors
   
-  #a ~ dnorm(0, 100^-2)
+  a ~ dnorm(0, 100^-2)
   for(i in 1:4){
+  #for(i in 1:5){
     b[i] ~ dnorm(0, 100^-2) 
   }
   
-  for(i in 1:2){
-    a[i] ~ dnorm(0, 100^-2)
-  }
+  #for(i in 1:2){
+  #  a[i] ~ dnorm(0, 100^-2)
+  #}
   cv = 1
   #cv ~ dunif(0.01, 1)
   sd_disc ~ dnorm(0, 100^-2)T(0,)
@@ -110,6 +117,14 @@ dmod <- "model{
 
 }"
 
-results <- run.jags(model = dmod, data = data, burnin = 5000,sample = 30000, 
-                    monitor = c("a", "b", "disc"), n.chains = 2, thin = 50)
-summary(results)
+
+results <- run.jags(model = dmod, data = testdata, burnin = 5000, sample = 30000, 
+                    monitor = c("disc"), n.chains = 2, thin = 5,
+                    method = "parallel")
+
+sumres <- summary(results)
+
+sr3 <- cbind(testdat[sort(ids), "disc"], sumres[sort(ids), 2], sumres[sort(ids), 4])
+sr2
+
+
