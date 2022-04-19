@@ -44,3 +44,5 @@ vignettes/*.pdf
 *.utf8.md
 *.knit.md
 .Rproj.user
+
+/01-Data/orig
