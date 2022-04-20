@@ -3,7 +3,7 @@
 
 d17 <- data17_all[1:47,]
 n <- nrow(d17)
-ids <- sample(1:n, n*0.3)
+ids <- sample(1:n, n*0.5)
 
 #   data with some hidden
 testdat <- d17 %>% 
@@ -28,7 +28,7 @@ testdata <- list(
   
 )
 
-)
+
 
 vseld <- list(
   n = length(d17$date),
@@ -41,3 +41,4 @@ vseld <- list(
   wind = d17$wind,
   rainbf = d17$rainbf
 )
+

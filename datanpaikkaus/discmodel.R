@@ -118,11 +118,14 @@ dmod <- "model{
 }"
 
 
-results <- run.jags(model = dmod, data = testdata, burnin = 5000, sample = 30000, 
-                    monitor = c("disc"), n.chains = 2, thin = 5,
+
+results <- run.jags(model = dmod, data = data, burnin = 5000, sample = 30000, 
+                    monitor = c("disc"), n.chains = 2, thin = 10,
                     method = "parallel")
 
 sumres <- summary(results)
+cbind(testdat[sort(ids), "disc"], sumres[sort(ids), 2], sumres[sort(ids), 4])
+
 
 sr3 <- cbind(testdat[sort(ids), "disc"], sumres[sort(ids), 2], sumres[sort(ids), 4])
 sr2
