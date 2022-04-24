@@ -11,7 +11,7 @@ disc17 <- read_excel("01.5-Data_raw/Virtaama_Patoniva 1963-2020.xlsx")
 wttr17 <- read_excel("datanpaikkaus/wttr_17.xlsx", sheet = "Havainnot")
 
 data17 <- smdwrg(nls17, wtemp17, disc17, wttr17)
-view(data17[[1]])
+#view(data17[[1]])
 
 
 nls18 <- read_excel("01.5-Data_raw/Utsjoki_nousulohet ja smoltit_2018.xlsx") %>% 
@@ -22,7 +22,7 @@ disc18 <- read_excel("01.5-Data_raw/Virtaama_Patoniva 1963-2020.xlsx")
 wttr18 <- read_excel("datanpaikkaus/wttr_18.xlsx", sheet = "Havainnot")
 
 data18 <- smdwrg(nls18, wtemp18, disc18, wttr18)
-view(data18[[2]])
+#view(data18[[2]])
 
 
 nls19 <- read_excel("01.5-Data_raw/Utsjoki_nousulohet ja smoltit_2019.xlsx") %>% 
@@ -33,7 +33,7 @@ disc19 <- read_excel("01.5-Data_raw/Virtaama_Patoniva 1963-2020.xlsx")
 wttr19 <- read_excel("datanpaikkaus/wttr_19.xlsx", sheet = "Havainnot")
 
 data19 <- smdwrg(nls19, wtemp19, disc19, wttr19)
-view(data19[[2]])
+#view(data19[[2]])
 
 
 nls20 <- read_excel("01.5-Data_raw/Utsjoki_nousulohet ja smoltit_2020_FINAL.xlsx") %>% 
@@ -44,7 +44,7 @@ disc20 <- read_excel("01.5-Data_raw/Virtaama_Patoniva 1963-2020.xlsx")
 wttr20 <- read_excel("datanpaikkaus/wttr_20.xlsx", sheet = "Havainnot")
 
 data20 <- smdwrg(nls20, wtemp20, disc20, wttr20)
-view(data20[[2]])
+#view(data20[[2]])
 
 nls21 <- read_excel("01.5-Data_raw/Utsjoki_nousulohet ja smoltit_2021_30112021.xlsx") %>% 
   rename(Klo = Hours)
@@ -54,7 +54,7 @@ disc21 <- read_excel("01.5-Data_raw/Virtaama_Patoniva 1963-2021.xlsx")
 wttr21 <- read_excel("datanpaikkaus/wttr_21.xlsx", sheet = "Havainnot")
 
 data21 <- smdwrg(nls21, wtemp21, disc21, wttr21)
-view(data21[[2]])
+#view(data21[[2]])
 
 
 view(data17[[1]])
