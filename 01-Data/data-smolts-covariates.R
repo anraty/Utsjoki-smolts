@@ -168,7 +168,7 @@ D16<-read_xlsx(str_c(pathIn2,"UTSJOKI VIDEODATA/Utsjoki_smoltit 2016.xlsx"),
   mutate(Day=Day)%>%
   mutate(Month=Month)%>%
   select(Year,Month,Day,day,smolts, school_size)
-View(D16)
+#View(D16)
 
 
 dat_smolts<-

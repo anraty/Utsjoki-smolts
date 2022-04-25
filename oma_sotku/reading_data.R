@@ -57,11 +57,11 @@ data21 <- smdwrg(nls21, wtemp21, disc21, wttr21)
 #view(data21[[2]])
 
 
-view(data17[[1]])
-view(data18[[1]])
-view(data19[[1]])
-view(data20[[1]])
-view(data21[[1]])
+#view(data17[[1]])
+#view(data18[[1]])
+#view(data19[[1]])
+#view(data20[[1]])
+#view(data21[[1]])
 
 table(is.na(data17[[1]]))#    has some na
 table(is.na(data18[[1]]))#    has some na
