@@ -33,8 +33,9 @@ wtemp_m <- "model{
     flow[i] ~ dlnorm( log(mu_fl[i])-0.5*log(cv_fl*cv_fl+1), 1/log(cv_fl*cv_fl+1) )
     #M_fl[i] = log(mu_fl[i])-0.5*log(cv_fl*cv_fl+1)
     #S2_fl = log(cv_f*cv_fl+1)
-    #mu_fl[i] =  a_fl + b_fl[1]*wtemp[i] + b_fl[2]*rbf[i]
-    mu_fl[i] =  ifelse(a_fl + b_fl[1]*wtemp[i]>=1,a_fl + b_fl[1]*wtemp[i], 1  )
+    mu_fl_r[i] =  a_fl + b_fl[1]*wtemp[i] + b_fl[2]*rbf[i] + b_fl[3]*rain[i]
+    mu_fl[i] =  ifelse(mu_fl_r[i]>=1, mu_fl_r[i], 1)
+    #mu_fl[i] =  ifelse(a_fl + b_fl[1]*wtemp[i]>=1,a_fl + b_fl[1]*wtemp[i], 1  )
     
   }
   
@@ -42,7 +43,7 @@ wtemp_m <- "model{
     b_wt[i] ~ dnorm(0, 100^-2)
   }
 
-  for(i in 1:1){
+  for(i in 1:3){
     b_fl[i] ~ dnorm(0, 100^-2)
   }
 

@@ -67,10 +67,10 @@ wttr_0216 %<>%
   select_all() %>% 
   mutate(
     rainbf = rainbf
-  )
+  ) 
 
 
-dat_all_m <- dat_all %>% 
+dat0216_all <- dat_all %>% 
   mutate(
   date = as_date(paste(Year, Month, Day))
   ) %>% 

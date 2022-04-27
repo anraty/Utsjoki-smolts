@@ -1,5 +1,8 @@
 # Annual data from 1.6. - 31.8. (92 days)
 ###############################################
+library(tidyverse);library(conflicted);library(readxl);library(lubridate)
+conflict_prefer("select", "dplyr");conflict_prefer("filter", "dplyr")
+
 pathIn2 <- "./01-Data/orig/"
 
 # Smolts

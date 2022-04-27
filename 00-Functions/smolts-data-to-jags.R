@@ -50,3 +50,6 @@ smolts_data_to_jags<-function(dat,x,n){
 }
 
 
+
+
+
