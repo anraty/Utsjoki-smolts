@@ -9,13 +9,13 @@ model{
   for(y in 1:nYears){
     for(i in 1:nDays ){
       #   Water temperature is estimated from air temperature
-      Temp[y,i] ~ dnorm(mu_temp[i], sd_temp^-2)
-      mu_wt[i] = a_temp + b_temp[1]*Temp_air[i]
+      Temp[i,y] ~ dnorm(mu_temp[i,y], sd_temp^-2)
+      mu_temp[i,y] = a_temp + b_temp[1]*Temp_air[i,y]
       
       #   Flow is estimetetd using water temperature, rain and days since last rain 
-      Flow[i] ~ dlnorm(log(mu_fl[i])-0.5*log(cv_fl*cv_fl+1), 1/log(cv_fl*cv_fl+1))
-      mu_fl_r[i] =  a_fl + b_fl[1]*Temp[i] + b_fl[2]*Rain_bf[i] + b_fl[3]*Rain[i]
-      mu_fl[i] =  ifelse(mu_fl_r[i]>=1, mu_fl_r[i], 1)
+      Flow[i,y] ~ dlnorm(log(mu_fl[i,y])-0.5*log(cv_fl*cv_fl+1), 1/log(cv_fl*cv_fl+1))
+      mu_fl_r[i,y] =  a_fl + b_fl[1]*Temp[i,y] + b_fl[2]*Rain_bf[i,y] + b_fl[3]*Rain[i,y]
+      mu_fl[i,y] =  ifelse(mu_fl_r[i,y]>=1, mu_fl_r[i,y], 1)
       
     }
   }
@@ -25,7 +25,7 @@ model{
   
   b_temp[1] ~ dnorm(0, 100^-2)
   
-  for(i in 1:2){
+  for(i in 1:3){
     b_fl[i] ~ dnorm(0, 100^-2)
   }
   

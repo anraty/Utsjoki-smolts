@@ -176,7 +176,8 @@ cat(M1,file=Mname)
 #years<-c(2005:2006,2007,2008,2014) # 4 years of data plus simulated 2007  
 years<-c(2005:2006,2008,2014) # 4 years of data for testing  
 n_days<-61
-dat<-dat_all # all real data
+#dat<-dat_all # all real data
+dat <- data0221
 #dat<-dat_all2 # 2007 simulated
 df<-smolts_data_to_jags(dat,years, n_days) # 61: only june & july
 
