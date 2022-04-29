@@ -15,7 +15,7 @@ model{
       mu_temp[i,y] = a_temp + b_temp[1]*Temp_air[i,y]
       
       #   Flow is estimetetd using water temperature, rain and days since last rain 
-      Flow[i,y] ~ dlnorm(log(mu_fl[i,y])-0.5*log(cv_fl*cv_fl+1), 1/log(cv_fl*cv_fl+1))
+      flow[i,y] ~ dlnorm(log(mu_fl[i,y])-0.5*log(cv_fl*cv_fl+1), 1/log(cv_fl*cv_fl+1))
       mu_fl_r[i,y] =  a_fl + b_fl[1]*Temp[i,y] + b_fl[2]*Rain_bf[i,y] + b_fl[3]*Rain[i,y]
       mu_fl[i,y] =  ifelse(mu_fl_r[i,y]>=1, mu_fl_r[i,y], 1)
       
@@ -31,7 +31,9 @@ model{
     b_fl[i] ~ dnorm(0, 100^-2)
   }
   
-  sd_temp ~ dnorm(0, 100^-2)T(0,)
+  #sd_temp ~ dnorm(0, 100^-2)T(0,)
+  # mu = 1, sd  = 100
+  sd_temp ~ dlnorm(-4.61, 0.11)
   cv_fl ~ dunif(0.01, 10)
 
   # Observation process
@@ -129,6 +131,7 @@ model{
       qDx[i,i,y]<-phi((log(0.5)-MD[i,y])/SD)
       
       # j>i
+      #   aikas kätsy indeksointi
       for(j in (i+1):(i+13)){ #13 
         qDx[i,j,y]<-phi((log(j-i+0.5)-MD[i,y])/SD)-phi((log(j-i-0.5)-MD[i,y])/SD)
       }
@@ -147,8 +150,11 @@ model{
   
   aD~dlnorm(0.52,14) # mu=1.75,cv=0.27
   bD~dlnorm(-4.6,25) # mu=0.01,cv=0.2
-  cvmuD~dunif(0.001,1)
-  cvD~dunif(0.001,2)
+  #cvmuD~dunif(0.001,1)
+  #cvD~dunif(0.001,2)
+  cvmuD~dunif(0.001,100)
+  cvD~dunif(0.001,100)
+  
   
   # Proportion departing in each day  
   # ========================================
@@ -157,7 +163,7 @@ model{
     for(i in 2:(nDays-1)){
       p2[i,y]<-(1-sum(p2[1:(i-1),y]))*p[i,y]
     }
-    p2[nDays,y]<-1-sum(p2[1:60,y])
+    p2[nDays,y]<-1-sum(p2[1:(nDays-1),y])
   
     # Joint distribution of qD and p2
     for(i in 1:nDays){ # day of departure
@@ -182,17 +188,9 @@ model{
   #sdPx~dbeta(3,7)
   #sdP<-sdPx*3
 
-  # check sums (should be close to 1, otherwise fish is lost)
-  for(i in 48:61){ # last 2 weeks of July 2006
-    sums1[i]<-sum(qD[i,i:(i+13),1])
-  }
-  for(i in 48:61){ # last 2 weeks of July 2014
-    sums2[i]<-sum(qD[i,i:(i+13),2])
-  }
-  
 }"
 
-years<-c(2005:2006,2008,2014) # 4 years of data for testing  
+years<-c(2002:2021) # 4 years of data for testing  
 n_days<-61
 dat<-data0221 # all real data
 df<-s_dat_jags(dat,years, n_days) # 61: only june & july
@@ -213,26 +211,26 @@ initials<-list(list(LNtot=rep(14,data$nYears),zN=array(1, dim=c(61,data$nYears))
                list(LNtot=rep(14,data$nYears),zN=array(1, dim=c(61,data$nYears))))
 
 var_names<-c(
+  "a_temp", "b_temp", "sd_temp",
+  
+  "a_fl", "b_fl", "cv_fl",
+  
   "aD","bD","cvD","cvmuD",
   "K","slope","cvS", "cvmuS",
-  
-  "sums1","sums2",
-  
+
   "aP","bP","sdP",
-  #"etaB",
-  "aB","bB","sdBB",
-  "eta_alphaN",
-  "Ntot","N"
+
+  "aB","bB","sdBB"
+  
 )
 
-res <- run.jags(M1, data = data, monitor = var_names, sample = 10000,
+res <- run.jags(M1, data = data, monitor = var_names, sample = 30000,
                 method = "parallel", n.chains = 2)
 
 summary(res)
+plot(res)
 
-Mname<-str_c("03-Model/","anthi", ".txt")
-cat(M1,file=Mname)
-jm<-jags.model(Mname,inits=initials, n.adapt=1000, data=data,n.chains=2)
-
-data$Nobs[30,1]
-
+mu = 1;sd = 100;cv = sd/mu
+log(mu)-0.5*log(cv*cv+1)
+1/log(cv*cv+1)
+sqrt(log(cv*cv+1))
