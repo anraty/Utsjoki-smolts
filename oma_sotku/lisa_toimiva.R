@@ -3,6 +3,44 @@ library(runjags);library(rjags)
 
 load("01-Data/smolts_weather0221.RData")
 
+
+nls20xtra <- read_excel("01.5-Data_raw/Utsjoki_lisäkamerat_kalat 2020_final_08102020.xlsx") %>% 
+  select(Date, Smolt) %>% 
+  transmute(
+    date = as_date(Date),
+    side = Smolt
+  ) %>% 
+  group_by(date) %>% 
+  summarise(
+    side = sum(side, na.rm =T)
+  )
+
+
+
+d20xtra <- data0221 %>% 
+  filter(Year==2020) %>% 
+  left_join(nls20xtra, by  = "date")
+
+years<-c(2020) # 4 years of data for testing  
+n_days<-61
+dat<-data0221 # all real data
+df<-s_dat_jags(dat,years, n_days) # 61: only june & july
+
+data<-list(
+  s=df$Schools,
+  flow=df$Flow,
+  flow_std = (df$Flow-mean(df$Flow))/sd(df$Flow),
+  Nobs=df$Smolts,
+  Nobs_side = as.matrix(d20xtra$side[1:61]),
+  Temp=df$Temp,
+  nDays=n_days,
+  nYears=length(years),
+  Temp_air = df$Temp_air,
+  Rain = df$Rain,
+  Rain_bf = df$Rain_bf
+)
+
+
 M1<-"
 model{
   
@@ -42,21 +80,33 @@ model{
     for(i in 1:nDays){ # 61 days in June-July
       
       # Observed number of fish
-      Nobs[i,y]~dpois(Nobsp[i,y]*N[i,y])
+      # Observed on sides
+      Nobs_side[i,y] ~ dpois(Nobsp[i,y]*N[i,y]*anthi[i,y]*0.5)
+      # Observed in the middle
+      Nobs[i,y]~dpois(Nobsp[i,y]*N[i,y]*(1-anthi[i,y]))
       Nobsp[i,y]~dbeta(muB[i,y]*etaB,(1-muB[i,y])*etaB)
        
       muB[i,y]<-0.6*(exp(BB[i,y])/(1+exp(BB[i,y])))+0.3
       BB[i,y]~dnorm(aB-bB*flow[i,y],1/pow(sdBB,2))
 
+      anthi[i,y] = 0.3*(1/(1+exp(-anthie[i,y])))
+      anthie[i,y] ~ dnorm(a_anthi + b_anthi*flow_std[i,y], sd_anthi^-2)
+
     }
   }
+  
+  # priors for smolt passing through extra 8 cams
+  a_anthi ~ dnorm(0,1)
+  b_anthi ~ dnorm(1,1)
+  sd_anthi ~ dnorm(0, 100^-2)T(0,)
+
   # priors for observation process
   aB~dnorm(2.9,60)
   bB~dlnorm(-2.6,984)
   sdBB~dlnorm(-0.23,210)
   etaB~dunif(5,1000)
   
-  # priors for schooling
+# priors for schooling
 #  K~dlnorm(6.07,0.7)
 #  slope~dlnorm(-1.94,66)
 #  cvS~dunif(0.001,2)
@@ -179,47 +229,9 @@ model{
 
 }"
 
-years<-c(2002:2021) # 4 years of data for testing  
-n_days<-61
-dat<-data0221 # all real data
-df<-s_dat_jags(dat,years, n_days) # 61: only june & july
-
-data<-list(
-  s=df$Schools,
-  flow=df$Flow,
-  Nobs=df$Smolts,                     
-  Temp=df$Temp,
-  nDays=n_days,
-  nYears=length(years),
-  Temp_air = df$Temp_air,
-  Rain = df$Rain,
-  Rain_bf = df$Rain_bf
-)
-
-initials<-list(list(LNtot=rep(14,data$nYears),zN=array(1, dim=c(61,data$nYears))),
-               list(LNtot=rep(14,data$nYears),zN=array(1, dim=c(61,data$nYears))))
-
-var_names<-c(
-  "a_temp", "b_temp", "sd_temp",
-  
-  "a_fl", "b_fl", "cv_fl",
-  
-  "aD","bD","cvD","cvmuD",
-  "K","slope","cvS", "cvmuS",
-
-  "aP","bP","sdP",
-
-  "aB","bB","sdBB"
-  
-)
-
-res <- run.jags(M1, data = data, monitor = var_names, sample = 30000,
-                method = "parallel", n.chains = 2)
+par <- c("a_anthi", "b_anthi", "sd_anthi")
+res <- run.jags(M1, data = data, monitor = "anthi", sample = 20000,
+                method = "parallel", n.chains = 2, thin = 1)
 
 summary(res)
-plot(res)
 
-mu = 1;sd = 100;cv = sd/mu
-log(mu)-0.5*log(cv*cv+1)
-1/log(cv*cv+1)
-sqrt(log(cv*cv+1))

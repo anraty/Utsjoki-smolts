@@ -3,6 +3,23 @@ library(runjags);library(rjags)
 
 load("01-Data/smolts_weather0221.RData")
 
+nls20xtra <- read_excel("01.5-Data_raw/Utsjoki_lisäkamerat_kalat 2020_final_08102020.xlsx") %>% 
+  select(Date, Smolt) %>% 
+  transmute(
+    date = as_date(Date),
+    side = Smolt
+  ) %>% 
+  group_by(date) %>% 
+  summarise(
+    side = sum(side, na.rm =T)
+  )
+
+
+
+d20xtra <- data0221 %>% 
+  filter(Year==2020) %>% 
+  left_join(nls20xtra, by  = "date")
+
 M1<-"
 model{
   
@@ -41,20 +58,55 @@ model{
   for(y in 1:nYears){
     for(i in 1:nDays){ # 61 days in June-July
       
-      # Observed number of fish
-      Nobs[i,y]~dpois(Nobsp[i,y]*N[i,y])
-      Nobsp[i,y]~dbeta(muB[i,y]*etaB,(1-muB[i,y])*etaB)
+      N[i,y] = N_mid[i,y]+N_side[i,y]
+
+      # Observed number of fish in the middle
+      Nobs_mid[i,y]~dpois(Nobsp_mid[i,y]*N_[i,y]*pmid)
+      Nobsp_mid[i,y]~dbeta(muB_mid[i,y]*etaB_mid,(1-muB_mid[i,y])*etaB_mid)
        
-      muB[i,y]<-0.6*(exp(BB[i,y])/(1+exp(BB[i,y])))+0.3
-      BB[i,y]~dnorm(aB-bB*flow[i,y],1/pow(sdBB,2))
+      muB_mid[i,y]<-0.6*(exp(BB_mid[i,y])/(1+exp(BB_mid[i,y])))+0.3
+      BB_mid[i,y]~dnorm(aB_mid-bB_mid*flow[i,y],1/pow(sdBB_mid,2))
+      
+      # Observed number of fish in the finnish side
+      Nobs_F[i,y]~dpois(Nobsp_F[i,y]*N_F[i,y])
+      Nobsp_F[i,y]~dbeta(muB_F[i,y]*etaB_F,(1-muB_F[i,y])*etaB_F)
+
+      muB_F[i,y]<-0.6*(exp(BB_F[i,y])/(1+exp(BB_F[i,y])))+0.3
+      BB_F[i,y]~dnorm(aB_F-bB_F*flow[i,y],1/pow(sdBB_F,2))
+      
+      # Smolt passing through both sides
+      N_side[i,y] = round(N_F[i,y] + N_N[i,y])      
+      
+      # Fin-side
+      #N_F[i,y] ~ dlnorm(log(mu_F[i,y])-0.5*log(cv_F*cv_F+1), 1/log(cv_F*cv_F+1))
+      #mu_F[i,y] = ifelse(mu_F_r[i,y]>=1, mu_F_r[i,y], 1)
+      #mu_F_r[i,y] = a_F + b_F*flow[i,y]
+      
+      # Nor_side (same or smaller)
+      N_N[i,y] = propF*N_F[i,y]
+      
 
     }
   }
-  # priors for observation process
-  aB~dnorm(2.9,60)
-  bB~dlnorm(-2.6,984)
-  sdBB~dlnorm(-0.23,210)
-  etaB~dunif(5,1000)
+  # priors for observation process in the middle
+  aB_mid~dnorm(2.9,60)
+  bB_mid~dlnorm(-2.6,984)
+  sdBB_mid~dlnorm(-0.23,210)
+  etaB_mid~dunif(5,1000)
+
+  # priors for observation process in the Fin-side
+  aB_F~dnorm(2.9,60)
+  bB_F~dlnorm(-2.6,984)
+  sdBB_F~dlnorm(-0.23,210)
+  etaB_F~dunif(5,1000)
+  
+  # Smolt on Fin-side
+  a_F ~ dnorm(0, 100^-2)
+  b_F ~ dnorm(0, 100^-2)
+  cv_F  ~ dunif(0.001, 10)
+
+  # Smolt on Nor-side
+  propF ~ dbeta(1,10)
   
   # priors for schooling
 #  K~dlnorm(6.07,0.7)
@@ -179,7 +231,11 @@ model{
 
 }"
 
-years<-c(2002:2021) # 4 years of data for testing  
+res <- run.jags(M1, data = data, monitor = var_names, sample = 30000,
+                method = "parallel", n.chains = 2)
+
+
+years<-c(2020) # 4 years of data for testing  
 n_days<-61
 dat<-data0221 # all real data
 df<-s_dat_jags(dat,years, n_days) # 61: only june & july
@@ -187,7 +243,8 @@ df<-s_dat_jags(dat,years, n_days) # 61: only june & july
 data<-list(
   s=df$Schools,
   flow=df$Flow,
-  Nobs=df$Smolts,                     
+  Nobs_mid=df$Smolts,
+  Nobs_F = as.matrix(d20xtra$side[1:61]),
   Temp=df$Temp,
   nDays=n_days,
   nYears=length(years),
@@ -206,9 +263,9 @@ var_names<-c(
   
   "aD","bD","cvD","cvmuD",
   "K","slope","cvS", "cvmuS",
-
+  
   "aP","bP","sdP",
-
+  
   "aB","bB","sdBB"
   
 )
@@ -216,6 +273,7 @@ var_names<-c(
 res <- run.jags(M1, data = data, monitor = var_names, sample = 30000,
                 method = "parallel", n.chains = 2)
 
+failed.jags()
 summary(res)
 plot(res)
 
