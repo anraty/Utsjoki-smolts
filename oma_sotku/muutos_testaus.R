@@ -6,21 +6,6 @@ load("01-Data/smolts_weather0221.RData")
 M1<-"
 model{
   
-  # Imputing missing values of flow and water temperature using weatherdata
-  # ==========================================================================
-  for(y in 1:nYears){
-    for(i in 1:nDays ){
-      #   Water temperature is estimated from air temperature
-      Temp[i,y] ~ dnorm(mu_temp[i,y], sd_temp^-2)
-      mu_temp[i,y] = a_temp + b_temp[1]*Temp_air[i,y]
-      
-      #   Flow is estimetetd using water temperature, rain and days since last rain 
-      flow[i,y] ~ dlnorm(log(mu_fl[i,y])-0.5*log(cv_fl*cv_fl+1), 1/log(cv_fl*cv_fl+1))
-      mu_fl_r[i,y] =  a_fl + b_fl[1]*Temp[i,y] + b_fl[2]*Rain_bf[i,y] + b_fl[3]*Rain[i,y]
-      mu_fl[i,y] =  ifelse(mu_fl_r[i,y]>=1, mu_fl_r[i,y], 1)
-      
-    }
-  }
  
 
   # Observation process
@@ -174,6 +159,11 @@ model{
   }
   
 }"
+
+res <- run.jags(M1, data = data, monitor = var_names, sample = 10000, inits = initials,
+                method = "parallel", n.chains = 2)
+
+
 
 years<-c(2005:2006,2008,2014) # 4 years of data for testing  
 n_days<-61

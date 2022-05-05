@@ -81,24 +81,26 @@ model{
       
       # Observed number of fish
       # Observed on sides
-      Nobs_side[i,y] ~ dpois(Nobsp[i,y]*N[i,y]*anthi[i,y]*0.5)
+      #Nobs_side[i,y] ~ dpois(Nobsp[i,y]*N[i,y]*rho[i,y]*0.5)
+      Nobs_side[i,y] ~ dbin(Nobsp[i,y]*rho[i,y]*0.5, N[i,y])
       # Observed in the middle
-      Nobs[i,y]~dpois(Nobsp[i,y]*N[i,y]*(1-anthi[i,y]))
+      #Nobs[i,y]~dpois(Nobsp[i,y]*N[i,y]*(1-rho[i,y]))
+      Nobs[i,y]~dbin(Nobsp[i,y]*(1-rho[i,y]), N[i,y])
       Nobsp[i,y]~dbeta(muB[i,y]*etaB,(1-muB[i,y])*etaB)
        
       muB[i,y]<-0.6*(exp(BB[i,y])/(1+exp(BB[i,y])))+0.3
       BB[i,y]~dnorm(aB-bB*flow[i,y],1/pow(sdBB,2))
 
-      anthi[i,y] = 0.3*(1/(1+exp(-anthie[i,y])))
-      anthie[i,y] ~ dnorm(a_anthi + b_anthi*flow_std[i,y], sd_anthi^-2)
+      rho[i,y] = 0.3*(1/(1+exp(-rhoe[i,y])))
+      rhoe[i,y] ~ dnorm(a_rho + b_rho*flow_std[i,y], sd_rho^-2)
 
     }
   }
   
   # priors for smolt passing through extra 8 cams
-  a_anthi ~ dnorm(0,1)
-  b_anthi ~ dnorm(1,1)
-  sd_anthi ~ dnorm(0, 100^-2)T(0,)
+  a_rho ~ dnorm(0,1)
+  b_rho ~ dnorm(1,1)
+  sd_rho ~ dnorm(0, 100^-2)T(0,)
 
   # priors for observation process
   aB~dnorm(2.9,60)
@@ -229,9 +231,15 @@ model{
 
 }"
 
-par <- c("a_anthi", "b_anthi", "sd_anthi")
-res <- run.jags(M1, data = data, monitor = "anthi", sample = 20000,
-                method = "parallel", n.chains = 2, thin = 1)
+par <- c("a_rho", "b_rho", "sd_rho")
+res <- run.jags(M1, data = data, monitor = "rho", sample = 30000,
+                method = "parallel", n.chains = 2, thin = 10, inits = initials)
+
+
 
 summary(res)
+
+
+initials<-list(list(LNtot=rep(14,data$nYears),zN=array(1, dim=c(61,data$nYears))),
+               list(LNtot=rep(14,data$nYears),zN=array(1, dim=c(61,data$nYears))))
 
