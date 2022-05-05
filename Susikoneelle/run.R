@@ -1,45 +1,5 @@
-source("oma_sotku/wrng-functions.R")
+load("data.Rdata")
 library(runjags);library(rjags)
-
-load("01-Data/smolts_weather0221.RData")
-
-
-nls20xtra <- read_excel("01.5-Data_raw/Utsjoki_lisäkamerat_kalat 2020_final_08102020.xlsx") %>% 
-  select(Date, Smolt) %>% 
-  transmute(
-    date = as_date(Date),
-    side = Smolt
-  ) %>% 
-  group_by(date) %>% 
-  summarise(
-    side = sum(side, na.rm =T)
-  )
-
-dat <- data0221 %>% left_join(nls20xtra, by = "date")
-
-
-
-years<-c(2020)
-n_days<-61
-
-df<-s_dat_jags(dat,years, n_days) # 61: only june & july
-
-data<-list(
-  nYears=length(years),
-  nDays = n_days,
-  s=df$Schools,
-  flow=df$Flow,
-  flow_std = (df$Flow-182)/102,
-  Nobs=df$Smolts,
-  Nobs_side=df$side,
-  Temp_air = df$Temp_air,
-  Rain = df$Rain,
-  Rain_bf = df$Rain_bf
-)
-
-
-initials<-list(list(LNtot=rep(14,data$nYears),zN=array(1, dim=c(61,data$nYears))),
-               list(LNtot=rep(14,data$nYears),zN=array(1, dim=c(61,data$nYears))))
 
 M1<-"
 model{
@@ -231,13 +191,28 @@ model{
 
 }"
 
-par <- c("a_rho", "b_rho", "sd_rho")
-res <- run.jags(M1, data = data, monitor = "rho", sample = 30000,
-                method = "parallel", n.chains = 2, thin = 3, inits = initials)
+initials<-list(list(LNtot=rep(14,data$nYears),zN=array(1, dim=c(61,data$nYears))),
+               list(LNtot=rep(14,data$nYears),zN=array(1, dim=c(61,data$nYears))))
 
-failed.jags('data')
+var_names<-c(
+  "a_temp", "b_temp", "sd_temp",
+  
+  "a_fl", "b_fl", "cv_fl",
+  
+  "aD","bD","cvD","cvmuD",
+  "K","slope","cvS", "cvmuS",
+  
+  "aP","bP","sdP",
+  
+  "aB","bB","sdBB",
+  
+  "a_rho", "b_rho", "sd_rho")
+
+res <- run.jags(M1, data = data, monitor = var_names, sample = 30000,
+                method = "parallel", n.chains = 2, thin = 10, inits = initials)
+
+
 
 summary(res)
 
-
-
+save(res, file = "res.RData")

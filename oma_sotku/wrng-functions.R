@@ -451,10 +451,15 @@ s_dat_jags <- function(dat, years, days){
     Temp = dat_f %>% select(matches("meanTemp\\.|meanTemp$")) %>% as.matrix(),
     Temp_air = dat_f %>% select(matches("temp_air\\.|temp_air$")) %>% as.matrix(), 
     Rain = dat_f %>% select(matches("rain\\.|rain$")) %>% as.matrix(),
-    Rain_bf = dat_f %>% select(matches("rainbf\\.|rainbf$")) %>% as.matrix()
+    Rain_bf = dat_f %>% select(matches("rainbf\\.|rainbf$")) %>% as.matrix(),
+    side = dat_f %>% select(matches("side\\.|side$")) %>% as.matrix()
   )
   return(data)
 }
+
+
+
+
 
 
 
