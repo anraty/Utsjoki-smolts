@@ -92,7 +92,8 @@ model{
       BB[i,y]~dnorm(aB-bB*flow[i,y],1/pow(sdBB,2))
 
       rho[i,y] = 1*(1/(1+exp(-rhoe[i,y])))
-      rhoe[i,y] = a_rho + b_rho*flow[i,y]
+      #rhoe[i,y] = a_rho + b_rho*flow[i,y]
+      rhoe[i,y] ~ dnorm(a_rho + b_rho*flow[i,y], sd_rho^-2)
       #rhoe[i,y] ~ dnorm(a_rho + b_rho*flow[i,y], sd_rho^-2)
 
     }
@@ -104,7 +105,8 @@ model{
 
   a_rho ~ dnorm(-6, abs(-6*a_rho_cv))
   b_rho ~ dnorm(-0.05,abs(-0.05*b_rho_cv))
-  sd_rho ~ dnorm(0, 10^-2)T(0,)
+  #sd_rho ~ dlnorm(0, 100^-2)
+  sd_rho ~ dnorm(0, 100^-2)T(0,)
 
   # priors for observation process
   aB~dnorm(2.9,60)
@@ -242,5 +244,6 @@ res <- run.jags(M1, data = data, monitor = "rho", sample = 50000,
 failed.jags('data')
 
 summary(res)
+
 dat %>% filter(Year==2020) %>% select(smolts, side)
 

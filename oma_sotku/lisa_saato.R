@@ -21,8 +21,8 @@ data <- list(
 
 par <- c("p")
 par2 <- c("N_f")
-res <- run.jags(priormod, data = data, monitor = par, sample = 100000,
-                method = "parallel", n.chains = 2, thin = 30)
+#res <- run.jags(priormod, data = data, monitor = par, sample = 100000,
+#                method = "parallel", n.chains = 2, thin = 30)
 
 summary(res)
 
@@ -64,4 +64,4 @@ pp <- function(a, acv, b, bcv, sd, sdcv){
 boxplot(pp(-6,1.5,0.05,1,1,1))
 
 
-install.packages('installr')
+
