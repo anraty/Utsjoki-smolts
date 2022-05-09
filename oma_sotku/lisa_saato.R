@@ -12,10 +12,11 @@ b ~ dnorm(0,1)
 sd ~ dnorm(0, 100^-2)T(0,)
 
 }"
+load("01-Data/dat0221.RData")
 
 data <- list(
-  nFlow = length(seq(min(na.omit(round(data0221$flow))), max(na.omit(round(data0221$flow))))),
-  flow = as.matrix(seq(min(na.omit(round(data0221$flow))), max(na.omit(round(data0221$flow)))))
+  nFlow = length(seq(min(na.omit(round(data$flow))), max(na.omit(round(data$flow))))),
+  flow = as.matrix(seq(min(na.omit(round(data$flow))), max(na.omit(round(data$flow)))))
 
 )
 
@@ -24,7 +25,7 @@ par2 <- c("N_f")
 #res <- run.jags(priormod, data = data, monitor = par, sample = 100000,
 #                method = "parallel", n.chains = 2, thin = 30)
 
-summary(res)
+#summary(res)
 
 
 #   function for plotting prior effect on p
@@ -61,7 +62,8 @@ pp <- function(a, acv, b, bcv, sd, sdcv){
 }
   
   
-boxplot(pp(-6,1.5,0.05,1,1,1))
+boxplot(pp(-6,1.5,0.05,1,1,1), xlab = "Virtaama / 10", 
+        ylab = "Sivulla kulkevien smolttien osuus")
 
 
 

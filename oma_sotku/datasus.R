@@ -19,6 +19,10 @@ nls20xtra <- read_excel("01.5-Data_raw/Utsjoki_lisäkamerat_kalat 2020_final_0810
 
 dat <- data0221 %>% left_join(nls20xtra, by = "date")
 
+dat
+
+#save(dat, file = "01-Data/dat0221.RData")
+
 
 
 years<-c(2011, 2017, 2020)

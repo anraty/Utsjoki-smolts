@@ -2,7 +2,10 @@ source("oma_sotku/wrng-functions.R")
 library(runjags);library(rjags)
 
 load("01-Data/smolts_weather0221.RData")
+load("Susikoneelle/data.RData")
+load("01-Data/dat0221.RData")
 
+data = dat
 
 nls20xtra <- read_excel("01.5-Data_raw/Utsjoki_lisäkamerat_kalat 2020_final_08102020.xlsx") %>% 
   select(Date, Smolt) %>% 
@@ -19,7 +22,7 @@ dat <- data0221 %>% left_join(nls20xtra, by = "date")
 
 
 
-years<-c(2020)
+years<-c(2016, 2020)
 n_days<-61
 
 df<-s_dat_jags(dat,years, n_days) # 61: only june & july
@@ -239,9 +242,9 @@ model{
 
 par <- c("a_rho", "b_rho", "sd_rho")
 res <- run.jags(M1, data = data, monitor = "rho", sample = 50000,
-                method = "parallel", n.chains = 2, thin = 1, inits = initials)
+                method = "parallel", n.chains = 2, thin = 2, inits = initials)
 
-failed.jags('data')
+failed.jags()
 
 summary(res)
 
