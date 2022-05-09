@@ -91,16 +91,20 @@ model{
       muB[i,y]<-0.6*(exp(BB[i,y])/(1+exp(BB[i,y])))+0.3
       BB[i,y]~dnorm(aB-bB*flow[i,y],1/pow(sdBB,2))
 
-      rho[i,y] = 0.3*(1/(1+exp(-rhoe[i,y])))
-      rhoe[i,y] ~ dnorm(a_rho + b_rho*flow_std[i,y], sd_rho^-2)
+      rho[i,y] = 1*(1/(1+exp(-rhoe[i,y])))
+      rhoe[i,y] = a_rho + b_rho*flow[i,y]
+      #rhoe[i,y] ~ dnorm(a_rho + b_rho*flow[i,y], sd_rho^-2)
 
     }
   }
   
   # priors for smolt passing through extra 8 cams
-  a_rho ~ dnorm(0,1)
-  b_rho ~ dnorm(1,1)
-  sd_rho ~ dnorm(0, 100^-2)T(0,)
+  a_rho_cv = 1.5
+  b_rho_cv = 1
+
+  a_rho ~ dnorm(-6, abs(-6*a_rho_cv))
+  b_rho ~ dnorm(-0.05,abs(-0.05*b_rho_cv))
+  sd_rho ~ dnorm(0, 10^-2)T(0,)
 
   # priors for observation process
   aB~dnorm(2.9,60)
@@ -232,12 +236,11 @@ model{
 }"
 
 par <- c("a_rho", "b_rho", "sd_rho")
-res <- run.jags(M1, data = data, monitor = "rho", sample = 30000,
-                method = "parallel", n.chains = 2, thin = 3, inits = initials)
+res <- run.jags(M1, data = data, monitor = "rho", sample = 50000,
+                method = "parallel", n.chains = 2, thin = 1, inits = initials)
 
 failed.jags('data')
 
 summary(res)
-
-
+dat %>% filter(Year==2020) %>% select(smolts, side)
 

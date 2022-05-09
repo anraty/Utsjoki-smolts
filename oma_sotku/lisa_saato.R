@@ -30,10 +30,10 @@ summary(res)
 #   function for plotting prior effect on p
 
 flow <- data$flow
-flow <- (flow-mean(flow))/sd(flow)
+#flow <- (flow-mean(flow))/sd(flow)
 
 expit <- function(r){
-  return( 1/(1+exp(-r))*0.3 )
+  return( 1/(1+exp(-r)))
 }
 
 tpar <- function(a, b){
@@ -43,6 +43,25 @@ tpar <- function(a, b){
 }
 
 
-tpar(1,2)
+tpar(-6,0.05)
 
 
+pp <- function(a, acv, b, bcv, sd, sdcv){
+  fl <- seq(0, 350, by = 10)
+  n = 10000
+  lenfl <- length(fl)
+  a_val <- rnorm(n, a, sd = abs(a*acv))
+  b_val <- rnorm(n, b, sd = abs(bcv*b))
+  eff <- matrix(nrow = n, ncol = lenfl)
+  for(i in 1:lenfl){
+    eff[,i] <- a_val + b_val*fl[i]
+  }
+  p <- expit(eff)
+  return(p)
+}
+  
+  
+boxplot(pp(-6,1.5,0.05,1,1,1))
+
+
+install.packages('installr')
