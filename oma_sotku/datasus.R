@@ -23,9 +23,10 @@ dat
 
 #save(dat, file = "01-Data/dat0221.RData")
 
+load("01-Data/dat0221.RData")
 
 
-years<-c(2011, 2017, 2020)
+years<-c(2011, 2014, 2020)
 n_days<-61
 
 df<-s_dat_jags(dat,years, n_days) # 61: only june & july
@@ -35,7 +36,6 @@ data<-list(
   nYears=length(years),
   s=df$Schools,
   flow=df$Flow,
-  flow_std = (df$Flow-182)/102,
   Nobs=df$Smolts,
   Nobs_side=df$side,
   Temp=df$Temp,
@@ -45,7 +45,6 @@ data<-list(
 )
 
 
-data$flow_std
 
-mean(data$flow, na.rm =T)
 save(data, file = "Susikoneelle/data.RData")
+data

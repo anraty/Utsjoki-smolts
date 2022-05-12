@@ -1,23 +1,11 @@
 source("oma_sotku/wrng-functions.R")
 library(runjags);library(rjags)
 
-load("01-Data/smolts_weather0221.RData")
+#   villi kokeilu cv suhteen
 
 
-nls20xtra <- read_excel("01.5-Data_raw/Utsjoki_lisäkamerat_kalat 2020_final_08102020.xlsx") %>% 
-  select(Date, Smolt) %>% 
-  transmute(
-    date = as_date(Date),
-    side = Smolt
-  ) %>% 
-  group_by(date) %>% 
-  summarise(
-    side = sum(side, na.rm =T)
-  )
 
-dat <- data0221 %>% left_join(nls20xtra, by = "date")
-
-
+load("01-Data/dat0221.RData")
 
 years<-c(2020)
 n_days<-61
@@ -32,6 +20,7 @@ data<-list(
   flow_std = (df$Flow-182)/102,
   Nobs=df$Smolts,
   Nobs_side=df$side,
+  Temp = df$Temp,
   Temp_air = df$Temp_air,
   Rain = df$Rain,
   Rain_bf = df$Rain_bf
@@ -49,15 +38,16 @@ model{
   for(y in 1:nYears){
     for(i in 1:nDays ){
       #   Water temperature is estimated from air temperature
-      Temp[i,y] ~ dnorm(mu_temp[i,y], sd_temp^-2)
+      #Temp[i,y] ~ dnorm(mu_temp[i,y], sd_temp^-2)
+      Temp[i,y] ~ dlnorm(log(mu_temp[i,y])-0.5*log(cv_temp[i,y]*cv_temp[i,y]+1), 1/log(cv_temp[i,y]*cv_temp[i,y]+1))
       #   cv[i,y]!!
-      mu_temp[i,y] = a_temp + b_temp[1]*Temp_air[i,y]
-      
+      mu_temp_r[i,y] = a_temp + b_temp[1]*Temp_air[i,y]
+      mu_temp[i,y] =  ifelse(mu_temp_r[i,y]>=0.0001, mu_temp_r[i,y], 0.0001)
       #   Flow is estimetetd using water temperature, rain and days since last rain 
-      flow[i,y] ~ dlnorm(log(mu_fl[i,y])-0.5*log(cv_fl*cv_fl+1), 1/log(cv_fl*cv_fl+1))
+      flow[i,y] ~ dlnorm(log(mu_fl[i,y])-0.5*log(cv_fl[i,y]*cv_fl[i,y]+1), 1/log(cv_fl[i,y]*cv_fl[i,y]+1))
       #   cv[i,y]!!
       mu_fl_r[i,y] =  a_fl + b_fl[1]*Temp[i,y] + b_fl[2]*Rain_bf[i,y] + b_fl[3]*Rain[i,y]
-      mu_fl[i,y] =  ifelse(mu_fl_r[i,y]>=1, mu_fl_r[i,y], 1)
+      mu_fl[i,y] =  ifelse(mu_fl_r[i,y]>=0.0001, mu_fl_r[i,y], 0.0001)
       
     }
   }
@@ -74,7 +64,21 @@ model{
   #sd_temp ~ dnorm(0, 100^-2)T(0,)
   # mu = 1, sd  = 100
   sd_temp ~ dlnorm(-4.61, 0.11)
-  cv_fl ~ dunif(0.01, 10)
+  #cv_fl ~ dunif(0.01, 10)
+  
+  upr_temp ~ dunif(0.001, 10)
+  lwr_temp ~ dbeta(1, 10)
+
+  upr_fl ~ dunif(0.001, 10)
+  lwr_fl ~ dbeta(1, 10)
+
+  for(y in 1:nYears){
+    for(i in 1:nDays){
+      cv_temp[i,y] ~ dunif(lwr_temp, upr_temp)
+      cv_fl[i,y] ~ dunif(lwr_fl, upr_fl)
+    }
+  }
+
 
   # Observation process
   # ====================
@@ -243,8 +247,8 @@ model{
 }"
 
 par <- c("a_rho", "b_rho", "sd_rho")
-res <- run.jags(M1, data = data, monitor = "rho", sample = 50000,
-                method = "parallel", n.chains = 2, thin = 1, inits = initials)
+res <- run.jags(M1, data = data, monitor = c("Temp", "flow"), sample = 30000,
+                method = "parallel", n.chains = 2, thin = 2, inits = initials)
 
 failed.jags('data')
 
