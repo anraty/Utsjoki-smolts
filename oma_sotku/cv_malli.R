@@ -17,7 +17,6 @@ data<-list(
   nDays = n_days,
   s=df$Schools,
   flow=df$Flow,
-  flow_std = (df$Flow-182)/102,
   Nobs=df$Smolts,
   Nobs_side=df$side,
   Temp = df$Temp,
@@ -66,11 +65,13 @@ model{
   sd_temp ~ dlnorm(-4.61, 0.11)
   #cv_fl ~ dunif(0.01, 10)
   
-  upr_temp ~ dunif(0.001, 10)
-  lwr_temp ~ dbeta(1, 10)
+  upr_temp ~ dunif(0.2, 2)
+  lwr_temp ~ dunif(0.0001, 0.2)
+  #lwr_temp ~ dbeta(1.1, 10)
 
-  upr_fl ~ dunif(0.001, 10)
-  lwr_fl ~ dbeta(1, 10)
+  upr_fl ~ dunif(0.2, 2)
+  lwr_fl ~ dunif(0.0001, 0.2)
+  #lwr_fl ~ dbeta(1.1, 10)
 
   for(y in 1:nYears){
     for(i in 1:nDays){
@@ -88,7 +89,12 @@ model{
       # Observed number of fish
       
       # Observed on sides
-      Nobs_side[i,y] ~ dbin(Nobsp[i,y]*rho[i,y]*0.5, N[i,y])
+      Nobs_side[i,y] ~ dbin(Nobsp_side[i,y]*rho[i,y]*pref, N[i,y])
+      
+      Nobsp_side[i,y]~dbeta(muB_side[i,y]*etaB_side,(1-muB_side[i,y])*etaB_side)
+       
+      muB_side[i,y]<-0.35*(exp(BB_side[i,y])/(1+exp(BB_side[i,y])))+0.6
+      BB_side[i,y]~dnorm(aB_side-bB_side*flow[i,y],1/pow(sdBB_side,2))
 
       # Observed in the middle
       Nobs[i,y]~dbin(Nobsp[i,y]*(1-rho[i,y]), N[i,y])
@@ -108,20 +114,30 @@ model{
   }
   
   # priors for smolt passing through extra 8 cams
-  a_rho_cv = 1.5
+  a_rho_cv = 1
   b_rho_cv = 1
 
-  a_rho ~ dnorm(-6, 1/abs(-6*a_rho_cv))
-  b_rho ~ dnorm(-0.05, 1/abs(-0.05*b_rho_cv))
+  a_rho ~ dnorm(-3, 1/abs(-6*a_rho_cv))
+  b_rho ~ dnorm(0.01, 1/abs(-0.05*b_rho_cv))
   #sd_rho ~ dlnorm(0, 100^-2)
   sd_rho ~ dnorm(0, 100^-2)T(0,)
 
   # priors for observation process
+  # middle
   aB~dnorm(2.9,60)
   bB~dlnorm(-2.6,984)
   sdBB~dlnorm(-0.23,210)
   etaB~dunif(5,1000)
   
+  # side
+  aB_side~dnorm(2.9,60)
+  bB_side~dlnorm(-2.6,984)
+  sdBB_side~dlnorm(-0.23,210)
+  etaB_side~dunif(5,1000)
+
+  pref ~ dbeta(50,40)
+  
+
 # priors for schooling
 #  K~dlnorm(6.07,0.7)
 #  slope~dlnorm(-1.94,66)
@@ -247,12 +263,23 @@ model{
 }"
 
 par <- c("a_rho", "b_rho", "sd_rho")
-res <- run.jags(M1, data = data, monitor = c("Temp", "flow"), sample = 30000,
+par <- c("upr_temp", "lwr_temp", "upr_fl", "lwr_fl")
+par <- c("rho")
+res <- run.jags(M1, data = data, monitor = par, sample = 20000,
                 method = "parallel", n.chains = 2, thin = 2, inits = initials)
+
+summary(res)
+plot(res)
+
 
 failed.jags('data')
 
-summary(res)
+sr <- as.data.frame(summary(res))
+
+sr %>% filter(str_detect(rownames(.), "flow"))
+
+
+srdf$
 
 dat %>% filter(Year==2020) %>% select(smolts, side)
 

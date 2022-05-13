@@ -33,8 +33,8 @@ par2 <- c("N_f")
 flow <- data$flow
 #flow <- (flow-mean(flow))/sd(flow)
 
-expit <- function(r){
-  return( 1/(1+exp(-r)))
+expit <- function(r, max = 1){
+  return( 1/(1+exp(-r))*max)
 }
 
 tpar <- function(a, b){
@@ -47,7 +47,7 @@ tpar <- function(a, b){
 tpar(-6,0.05)
 
 
-pp <- function(a, acv, b, bcv, sd, sdcv){
+pp <- function(a, acv, b, bcv, sd, sdcv, max = 1){
   fl <- seq(0, 350, by = 10)
   n = 10000
   lenfl <- length(fl)
@@ -57,13 +57,13 @@ pp <- function(a, acv, b, bcv, sd, sdcv){
   for(i in 1:lenfl){
     eff[,i] <- a_val + b_val*fl[i]
   }
-  p <- expit(eff)
+  p <- expit(eff, max = max)
   return(p)
 }
   
   
-boxplot(pp(-6,1.5,0.05,1,1,1), xlab = "Virtaama / 10", 
-        ylab = "Sivulla kulkevien smolttien osuus")
+boxplot(pp(-3,1,0.01,1,1,1, max = 1), xlab = "Virtaama / 10", 
+        ylab = "Sivulla kulkevien smolttien osuus", outline = F)
 
 
 
