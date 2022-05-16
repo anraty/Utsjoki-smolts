@@ -1,3 +1,5 @@
+
+setwd("C:/Users/03195892.VALTION/OneDrive - Valtion/Utsjoki-smolts")
 source("oma_sotku/wrng-functions.R")
 library(runjags);library(rjags)
 
@@ -95,6 +97,7 @@ model{
        
       muB_side[i,y]<-0.35*(exp(BB_side[i,y])/(1+exp(BB_side[i,y])))+0.6
       BB_side[i,y]~dnorm(aB_side-bB_side*flow[i,y],1/pow(sdBB_side,2))
+      #BB_side[i,y] <- aB_side-bB_side*flow[i,y]
 
       # Observed in the middle
       Nobs[i,y]~dbin(Nobsp[i,y]*(1-rho[i,y]), N[i,y])
@@ -114,13 +117,13 @@ model{
   }
   
   # priors for smolt passing through extra 8 cams
-  a_rho_cv = 1
-  b_rho_cv = 1
+  a_rho_cv = 0.5
+  b_rho_cv = 0.5
 
   a_rho ~ dnorm(-3, 1/abs(-6*a_rho_cv))
-  b_rho ~ dnorm(0.01, 1/abs(-0.05*b_rho_cv))
+  b_rho ~ dnorm(0.005, 1/abs(-0.05*b_rho_cv))
   #sd_rho ~ dlnorm(0, 100^-2)
-  sd_rho ~ dnorm(0, 100^-2)T(0,)
+  sd_rho ~ dnorm(0, 1^-2)T(0,)
 
   # priors for observation process
   # middle
@@ -265,8 +268,8 @@ model{
 par <- c("a_rho", "b_rho", "sd_rho")
 par <- c("upr_temp", "lwr_temp", "upr_fl", "lwr_fl")
 par <- c("rho")
-res <- run.jags(M1, data = data, monitor = par, sample = 20000,
-                method = "parallel", n.chains = 2, thin = 2, inits = initials)
+res <- run.jags(M1, data = data, monitor = par, sample = 30000,
+                method = "parallel", n.chains = 2, thin = 3, inits = initials)
 
 summary(res)
 plot(res)
@@ -283,3 +286,4 @@ srdf$
 
 dat %>% filter(Year==2020) %>% select(smolts, side)
 
+data$Nobs_side

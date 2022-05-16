@@ -1,4 +1,5 @@
 #   testing model for extracameras
+library(truncnorm)
 
 
 priormod <- "model{
@@ -47,23 +48,49 @@ tpar <- function(a, b){
 tpar(-6,0.05)
 
 
-pp <- function(a, acv, b, bcv, sd, sdcv, max = 1){
+pp <- function(a, acv, b, bcv, sd, sdsd, max = 1){
   fl <- seq(0, 350, by = 10)
-  n = 10000
+  n = 1000
+  sd <- rtruncnorm(n, a = 0, mean = sd, sd = sdsd)
   lenfl <- length(fl)
   a_val <- rnorm(n, a, sd = abs(a*acv))
   b_val <- rnorm(n, b, sd = abs(bcv*b))
-  eff <- matrix(nrow = n, ncol = lenfl)
+  mu_eff <- matrix(nrow = n, ncol = lenfl)
+  sm <- n*lenfl
   for(i in 1:lenfl){
-    eff[,i] <- a_val + b_val*fl[i]
+    mu_eff[,i] <- a_val + b_val*fl[i]
   }
+  
+  for(i in 1:length(sd)){
+    if(i == 1){
+      eff <- matrix(rnorm(sm, mu_eff, sd = sd[i]), ncol = ncol(mu_eff))
+      colnames(eff) <- paste(fl)
+    }
+    else{
+      efft <- matrix(rnorm(sm, mu_eff, sd = sd[i]), ncol = ncol(mu_eff))
+      colnames(efft) <- paste(fl)
+      eff <- rbind(eff, efft)
+    }
+  }
+  
+  
+    
+  
+  
   p <- expit(eff, max = max)
   return(p)
 }
   
-  
-boxplot(pp(-3,1,0.01,1,1,1, max = 1), xlab = "Virtaama / 10", 
+k <- pp(-3,0.5,0.005,0.5,0,1, max = 1)  
+
+boxplot(k, xlab = "Virtaama", 
         ylab = "Sivulla kulkevien smolttien osuus", outline = F)
 
 
+m <- matrix(c(1,2,3,4), ncol=2)
 
+matrix(rnorm(4,m, sd = 0.00001), ncol =2)
+
+r <- seq(0, 350, by = 10)
+
+paste(r)
